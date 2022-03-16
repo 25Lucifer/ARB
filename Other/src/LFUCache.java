@@ -1,5 +1,4 @@
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -21,9 +20,12 @@ public class LFUCache {
     }
 
     public int get(int key) {
-
-
-        return 0;
+        ListNode node = new ListNode(-1, -1);
+        if (map.containsKey(key)) {
+            node = map.get(key);
+            updateNodeFreq(node);
+        }
+        return node.val;
     }
 
     public void put(int key, int value) {
@@ -33,40 +35,66 @@ public class LFUCache {
         if (map.containsKey(key)) {
             ListNode node = map.get(key);
             node.val = value;
-            updateNode(node);
+            updateNodeFreq(node);
         } else {
-
+            if (capacity == size) {
+                removeLastFreqNode();
+            }
+            ListNode node = new ListNode(key, value);
+            map.put(key, node);
+            insertNode(node);
         }
+    }
 
+    private void insertNode(ListNode node) {
+        node.freq = 1;
+        this.minFreq = node.freq;
+        DLinkedList list = count.getOrDefault(node.freq, new DLinkedList());
+        node.next = list.head.next;
+        list.head.next.pre = node;
+        node.pre = list.head;
+        list.head.next = node;
+        list.count++;
+    }
 
-        ListNode target = map.getOrDefault(key, new ListNode(value));
-        target.freq++;
-        target.val = value;
+    private void removeLastFreqNode() {
+        DLinkedList list = count.get(minFreq);
+        ListNode rmNode = list.pair.pre;
+        map.remove(rmNode.key);
+        rmNode.next.pre = rmNode.pre;
+        rmNode.pre.next = rmNode.next;
+        list.count--;
+        if (list.count == 0) {
+            this.minFreq++;
+        }
+    }
+
+    private void updateNodeFreq(ListNode node) {
         // remove from old
-        if (target.pre != null) {
-            target.pre.next = target.next;
-        }
-        if (target.next != null) {
-            target.next.pre = target.pre;
-        }
+        DLinkedList oldList = count.get(node.freq);
+        oldList.count--;
+        node.next.pre = node.pre;
+        node.pre.next = node.next;
         // add to new's head
-        DLinkedList list = count.getOrDefault(target.freq, new DLinkedList());
+        node.freq++;
+        DLinkedList newList = count.getOrDefault(node.freq, new DLinkedList());
+        node.next = newList.head.next;
+        newList.head.next.pre = node;
+        node.pre = newList.head;
+        newList.head.next = node;
+        newList.count++;
 
-        target.next = list.head.next;
-        list.head.next.pre = target;
-        target.pre = list.head;
-        list.head.next = target;
-
-        count.put(target.freq, list);
     }
 
     class ListNode {
+        int key;
         int val;
         int freq = 0;
         ListNode pre;
         ListNode next;
         ListNode() {}
-        ListNode (int val) {
+        ListNode (int key, int val) {
+            this.key = key;
             this.val = val;
         }
     }
@@ -81,8 +109,5 @@ public class LFUCache {
             head.next = pair;
             pair.pre = head;
         }
-
-
-
     }
 }
