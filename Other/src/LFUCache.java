@@ -55,6 +55,8 @@ public class LFUCache {
         node.pre = list.head;
         list.head.next = node;
         list.count++;
+        this.size++;
+        count.put(node.freq, list);
     }
 
     private void removeLastFreqNode() {
@@ -63,10 +65,12 @@ public class LFUCache {
         map.remove(rmNode.key);
         rmNode.next.pre = rmNode.pre;
         rmNode.pre.next = rmNode.next;
+        count.put(minFreq, list);
         list.count--;
         if (list.count == 0) {
             this.minFreq++;
         }
+        this.size--;
     }
 
     private void updateNodeFreq(ListNode node) {
@@ -75,6 +79,7 @@ public class LFUCache {
         oldList.count--;
         node.next.pre = node.pre;
         node.pre.next = node.next;
+        count.put(node.freq, oldList);
         // add to new's head
         node.freq++;
         DLinkedList newList = count.getOrDefault(node.freq, new DLinkedList());
@@ -83,6 +88,7 @@ public class LFUCache {
         node.pre = newList.head;
         newList.head.next = node;
         newList.count++;
+        count.put(node.freq, newList);
 
     }
 
@@ -109,5 +115,16 @@ public class LFUCache {
             head.next = pair;
             pair.pre = head;
         }
+    }
+
+    public static void main(String[] args) {
+        LFUCache cache = new LFUCache(4);
+        cache.put(1, 1);
+        cache.put(2, 2);
+        cache.put(3, 3);
+        cache.put(4, 4);
+        cache.get(1);
+        cache.put(5, 5);
+        cache.get(4);
     }
 }
